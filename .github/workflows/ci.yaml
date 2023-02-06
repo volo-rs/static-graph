@@ -28,6 +28,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
       - uses: Swatinem/rust-cache@v1
       - name: Run tests
         run: |
@@ -40,7 +42,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
-      # - uses: Swatinem/rust-cache@v1
+        with:
+          components: rustfmt
       - name: Run tests
         run: |
           cargo check
