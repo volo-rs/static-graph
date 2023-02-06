@@ -1,0 +1,92 @@
+use std::time::{Duration, Instant};
+
+use gen_graph::{Runnable, E, G, O, X, Y};
+
+#[allow(warnings, clippy::all)]
+pub mod gen_graph {
+    static_graph::include_graph!("gen_graph.rs");
+}
+
+#[derive(Default)]
+pub struct Cache;
+
+impl Cache {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+#[tokio::main]
+async fn main() {
+    let start = Instant::now();
+    let resp = G::new()
+        .run::<Request, EResponse, XResponse, YResponse, OResponse>(Request {
+            msg: "**Hello, world!**".to_string(),
+            user_age: 18,
+        })
+        .await;
+    let duration = start.elapsed();
+
+    println!("Time elapsed is {duration:?}, resp is {resp:?}");
+}
+
+#[derive(Clone)]
+pub struct Request {
+    msg: String,
+    user_age: u8,
+}
+
+#[derive(Clone)]
+pub struct EResponse(Duration);
+
+#[async_trait::async_trait]
+impl Runnable<Request, ()> for E {
+    type Resp = EResponse;
+
+    async fn run(&self, _req: Request, _prev_resp: ()) -> Self::Resp {
+        tokio::time::sleep(Duration::from_secs(1)).await;
+        EResponse(Duration::from_secs(1))
+    }
+}
+
+#[derive(Clone)]
+pub struct XResponse(bool);
+
+#[async_trait::async_trait]
+impl Runnable<Request, EResponse> for X {
+    type Resp = XResponse;
+
+    async fn run(&self, req: Request, prev_resp: EResponse) -> Self::Resp {
+        tokio::time::sleep(prev_resp.0).await;
+        XResponse(!req.msg.contains('*'))
+    }
+}
+
+#[derive(Clone)]
+pub struct YResponse(bool);
+
+#[async_trait::async_trait]
+impl Runnable<Request, EResponse> for Y {
+    type Resp = YResponse;
+
+    async fn run(&self, req: Request, prev_resp: EResponse) -> Self::Resp {
+        tokio::time::sleep(prev_resp.0).await;
+        YResponse(req.user_age >= 18)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct OResponse(String);
+
+#[async_trait::async_trait]
+impl Runnable<Request, (XResponse, YResponse)> for O {
+    type Resp = OResponse;
+
+    async fn run(&self, req: Request, prev_resp: (XResponse, YResponse)) -> Self::Resp {
+        if prev_resp.0 .0 && prev_resp.1 .0 {
+            OResponse(req.msg)
+        } else {
+            OResponse("Ban".to_string())
+        }
+    }
+}
