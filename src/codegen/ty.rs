@@ -19,6 +19,7 @@ pub enum CodegenTy {
     Vec(Arc<CodegenTy>),
     Set(Arc<CodegenTy>),
     Map(Arc<CodegenTy>, Arc<CodegenTy>),
+    ArcSwap(Arc<CodegenTy>),
     Adt(Adt),
 }
 
@@ -52,6 +53,10 @@ impl ToTokens for CodegenTy {
                 let k = &**k;
                 let v = &**v;
                 tokens.extend(quote! { ::std::collections::HashMap<#k, #v> });
+            }
+            CodegenTy::ArcSwap(ty) => {
+                let ty = &**ty;
+                tokens.extend(quote! { ::static_graph::ArcSwap<#ty> });
             }
             CodegenTy::Adt(adt) => {
                 let adt: Vec<_> = adt

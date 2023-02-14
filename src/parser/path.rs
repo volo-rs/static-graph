@@ -15,8 +15,8 @@ pub struct Path {
     pub segments: Arc<[Ident]>,
 }
 
-impl Parser for Path {
-    fn parse(input: &str) -> IResult<&str, Self> {
+impl<'a> Parser<'a> for Path {
+    fn parse(input: &'a str) -> IResult<&'a str, Self> {
         map(
             separated_list1(tuple((opt(blank), tag("::"), opt(blank))), Ident::parse),
             |idents| Path {

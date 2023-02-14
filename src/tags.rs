@@ -73,3 +73,18 @@ impl FromStr for Construct {
 impl Annotation for Construct {
     const KEY: &'static str = "default";
 }
+
+#[derive(Clone)]
+pub struct Editable(pub bool);
+
+impl FromStr for Editable {
+    type Err = std::convert::Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(s == "true"))
+    }
+}
+
+impl Annotation for Editable {
+    const KEY: &'static str = "editable";
+}

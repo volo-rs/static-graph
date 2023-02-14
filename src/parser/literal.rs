@@ -21,8 +21,8 @@ impl Deref for Literal {
     }
 }
 
-impl Parser for Literal {
-    fn parse(input: &str) -> IResult<&str, Literal> {
+impl<'a> Parser<'a> for Literal {
+    fn parse(input: &'a str) -> IResult<&'a str, Literal> {
         alt((
             map(single_quote, |x| Literal(x.into())),
             map(double_quote, |x| Literal(x.into())),

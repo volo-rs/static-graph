@@ -28,8 +28,8 @@ pub enum Type {
     Path(Path),
 }
 
-impl Parser for Type {
-    fn parse(input: &str) -> IResult<&str, Self> {
+impl<'a> Parser<'a> for Type {
+    fn parse(input: &'a str) -> IResult<&'a str, Self> {
         alt((
             map(tag("string"), |_| Type::String),
             map(tag("void"), |_| Type::Void),

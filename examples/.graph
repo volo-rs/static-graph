@@ -1,6 +1,6 @@
 node E -> (X, Y) {
-    #[default = "crate::Cache::new"]
-    cache: crate::Cache,
+    #[default = "crate::Custom::new"]
+    custom: crate::Custom,
 }
 
 node X -> O {
@@ -12,6 +12,7 @@ node Y -> O {
 }
 
 node O {
+    #[editable = "true"]
     o: string,
 }
 

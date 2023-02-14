@@ -8,8 +8,8 @@ pub struct Graph {
     pub entry_node: Ident,
 }
 
-impl Parser for Graph {
-    fn parse(input: &str) -> IResult<&str, Self> {
+impl<'a> Parser<'a> for Graph {
+    fn parse(input: &'a str) -> IResult<&'a str, Self> {
         map(
             tuple((
                 tag("graph"),

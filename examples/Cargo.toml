@@ -12,8 +12,8 @@ path = "src/graph.rs"
 
 [dependencies]
 async-trait = "0.1"
-static-graph = { path = "../static-graph" }
+static-graph = { path = "../" }
 tokio = { version = "1", features = ["full"] }
 
 [build-dependencies]
-static-graph = { path = "../static-graph" }
+static-graph = { path = "../" }

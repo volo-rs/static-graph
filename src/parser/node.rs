@@ -17,8 +17,8 @@ pub struct Node {
     pub fields: Vec<Field>,
 }
 
-impl Parser for Node {
-    fn parse(input: &str) -> IResult<&str, Self> {
+impl<'a> Parser<'a> for Node {
+    fn parse(input: &'a str) -> IResult<&'a str, Self> {
         map(
             tuple((
                 tag("node"),

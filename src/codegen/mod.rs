@@ -8,9 +8,10 @@ use fxhash::{FxHashMap, FxHashSet};
 use proc_macro2::TokenStream;
 use quote::format_ident;
 
+use crate::tags::Editable;
 use crate::{
     context::Context,
-    resolver::rir::{Graph, Node, Type},
+    resolver::rir::{Graph, Node},
     symbol::{DefId, IdentName},
     tags::Construct,
 };
@@ -63,7 +64,7 @@ impl Codegen {
 
         stream.extend(quote::quote! {
             pub struct #graph_name {
-                #entry_node_name: ::std::sync::Arc<#entry_node_ty>,
+                pub #entry_node_name: ::std::sync::Arc<#entry_node_ty>,
             }
             impl #graph_name {
                 pub fn new() -> Self {
@@ -120,23 +121,24 @@ impl Codegen {
             fields.extend(quote::quote! {
                 pub #name: #ty,
             });
-            match &f.ty {
-                Type::Path(_) => {
-                    let tags = self.tag(f.tag_id).unwrap();
-                    let c = tags.get::<Construct>().unwrap();
 
-                    let ident: Vec<_> = c.0.split("::").map(|s| format_ident!("{}", s)).collect();
-
+            let tags = self.tag(f.tag_id).unwrap();
+            if let Some(c) = tags.get::<Construct>() {
+                let ident: Vec<_> = c.0.split("::").map(|s| format_ident!("{}", s)).collect();
+                if let Some(Editable(true)) = tags.get::<Editable>() {
+                    fields_impl.extend(quote::quote! {
+                        #name: ::static_graph::ArcSwap::from_pointee(#(#ident)::*()),
+                    });
+                } else {
                     fields_impl.extend(quote::quote! {
                         #name: #(#ident)::*(),
                     });
                 }
-                _ => {
-                    fields_impl.extend(quote::quote! {
-                        #name: Default::default(),
-                    });
-                }
-            }
+            } else {
+                fields_impl.extend(quote::quote! {
+                    #name: ::std::default::Default::default(),
+                });
+            };
         }
 
         stream.extend(quote::quote! {
@@ -170,7 +172,8 @@ impl Codegen {
                 Req: Clone,
             {
                 type Resp;
-                async fn run(&self, req: Req, prev_resp: PrevResp) -> Self::Resp;
+                type Error;
+                async fn run(&self, req: Req, prev_resp: PrevResp) -> ::std::result::Result<Self::Resp, Self::Error>;
             }
         });
     }
@@ -232,7 +235,7 @@ impl Codegen {
                     if !resps.is_empty() {
                         bodys.extend(quote::quote! {
                             let (#(#resps),*) = match static_graph::join!(#(#handles),*) {
-                                (#(#matches,)*) => (#(#resps),*),
+                                (#(#matches,)*) => (#(#resps?),*),
                                 _ => panic!("Error"),
                             };
                         });
@@ -242,7 +245,7 @@ impl Codegen {
                 let upper_resp = format_ident!("{}Resp", upper_name);
                 generics.push(upper_resp.clone());
                 bounds.extend(quote::quote! {
-                    #upper_name: Runnable<Req, (#(#upper_prev_resps),*), Resp = #upper_resp>,
+                    #upper_name: Runnable<Req, (#(#upper_prev_resps),*), Resp = #upper_resp, Error = Error>,
                     #upper_resp: Clone + Send + Sync + 'static,
                 });
 
@@ -291,9 +294,10 @@ impl Codegen {
         let out_resp = out_resp.unwrap();
         stream.extend(quote::quote! {
             impl #name {
-                pub async fn run<Req, #(#generics),*>(&self, req: Req) -> #out_resp
+                pub async fn run<Req, #(#generics),*, Error>(&self, req: Req) -> ::std::result::Result<#out_resp, Error>
                 where
                     Req: Clone + Send + Sync + 'static,
+                    Error: Clone + Send + Sync + 'static,
                     #bounds
                 {
                     #bodys

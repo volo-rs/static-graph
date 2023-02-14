@@ -28,8 +28,8 @@ impl Deref for Annotations {
 #[derive(Debug, Clone, Default)]
 pub struct Annotations(pub Vec<Annotation>);
 
-impl Parser for Annotations {
-    fn parse(input: &str) -> IResult<&str, Annotations> {
+impl<'a> Parser<'a> for Annotations {
+    fn parse(input: &'a str) -> IResult<&'a str, Annotations> {
         map(
             tuple((
                 tag("#["),

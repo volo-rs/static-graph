@@ -23,15 +23,15 @@ impl Deref for Ident {
     }
 }
 
-impl Parser for Ident {
-    fn parse(input: &str) -> IResult<&str, Ident> {
+impl<'a> Parser<'a> for Ident {
+    fn parse(input: &'a str) -> IResult<&'a str, Ident> {
         map(
             recognize(tuple((
                 many0(char('_')),
                 satisfy(|c| c.is_ascii_alphabetic()),
                 take_while(|c: char| c.is_ascii_alphanumeric() || c == '_'),
             ))),
-            |ident: &str| -> Ident { Ident(ident.into()) },
+            |ident: &str| -> Ident { Ident(FastStr::new(ident)) },
         )(input)
     }
 }

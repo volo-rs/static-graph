@@ -14,8 +14,8 @@ pub struct Field {
     pub annotations: Annotations,
 }
 
-impl Parser for Field {
-    fn parse(input: &str) -> IResult<&str, Self> {
+impl<'a> Parser<'a> for Field {
+    fn parse(input: &'a str) -> IResult<&'a str, Self> {
         map(
             tuple((
                 opt(Annotations::parse),

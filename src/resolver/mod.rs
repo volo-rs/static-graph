@@ -9,7 +9,7 @@ use crate::{
     parser::document::Document,
     symbol::{DefId, Ident, Symbol, TagId},
     tags::Annotation,
-    tags::{Construct, Tags},
+    tags::{Construct, Editable, Tags},
 };
 
 use self::rir::{Field, Graph, Node, Path, Type};
@@ -122,17 +122,27 @@ impl Resolver {
     fn lower_field(&mut self, f: &crate::parser::field::Field) -> Arc<Field> {
         let tag_id = self.tid_counter.inc_one();
         let tags = self.extract_tags(&f.annotations);
-        self.tags.insert(tag_id, tags.into());
 
         let name = self.lower_ident(&f.name);
         let def_id = self.get_did(&name);
         let ty = self.lower_type(&f.ty);
+        let ty = self.modify_ty_by_tags(ty, &tags);
+
+        self.tags.insert(tag_id, tags.into());
 
         let field = Arc::from(Field { name, ty, tag_id });
 
         self.fields.insert(def_id, field.clone());
 
         field
+    }
+
+    fn modify_ty_by_tags(&mut self, ty: Type, tags: &Tags) -> Type {
+        if let Some(Editable(true)) = tags.get::<Editable>() {
+            Type::ArcSwap(Arc::from(ty))
+        } else {
+            ty
+        }
     }
 
     fn extract_tags(&mut self, annotations: &crate::parser::annotations::Annotations) -> Tags {
@@ -150,7 +160,7 @@ impl Resolver {
 
         annotations
             .iter()
-            .for_each(|annotation| with_tags!(annotation -> Construct));
+            .for_each(|annotation| with_tags!(annotation -> Construct | Editable));
 
         tags
     }

@@ -19,8 +19,8 @@ use nom::{
     IResult,
 };
 
-pub trait Parser: Sized {
-    fn parse(input: &str) -> IResult<&str, Self>;
+pub trait Parser<'a>: Sized {
+    fn parse(input: &'a str) -> IResult<&'a str, Self>;
 }
 
 fn comment(input: &str) -> IResult<&str, &str> {

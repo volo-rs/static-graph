@@ -7,7 +7,7 @@
 [crates-badge]: https://img.shields.io/crates/v/static-graph.svg
 [crates-url]: https://crates.io/crates/static-graph
 [license-badge]: https://img.shields.io/crates/l/static-graph.svg
-[license-url]: LICENSE-MIT
+[license-url]: #license
 [actions-badge]: https://github.com/volo-rs/static-graph/actions/workflows/ci.yaml/badge.svg
 [actions-url]: https://github.com/volo-rs/static-graph/actions
 

@@ -14,8 +14,8 @@ pub struct Document {
     pub nodes: Vec<Node>,
 }
 
-impl Parser for Document {
-    fn parse(input: &str) -> IResult<&str, Self> {
+impl<'a> Parser<'a> for Document {
+    fn parse(input: &'a str) -> IResult<&'a str, Self> {
         enum NodeOrGraph {
             Node(Node),
             Graph(Graph),

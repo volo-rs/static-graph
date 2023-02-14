@@ -6,6 +6,7 @@ pub mod resolver;
 pub mod symbol;
 pub mod tags;
 
+pub use arc_swap::*;
 pub use async_trait::*;
 pub use tokio::*;
 
@@ -77,7 +78,6 @@ impl Builder {
         let input = unsafe { String::from_utf8_unchecked(std::fs::read(graph).unwrap()) };
 
         let document = Document::parse(&input).unwrap().1;
-
         let ResolveResult {
             graphs,
             nodes,

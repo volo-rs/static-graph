@@ -45,6 +45,7 @@ pub enum Type {
     Vec(Arc<Type>),
     Set(Arc<Type>),
     Map(Arc<Type>, Arc<Type>),
+    ArcSwap(Arc<Type>),
     Path(Path),
 }
 
@@ -66,6 +67,7 @@ impl Type {
             Type::Map(k, v) => {
                 CodegenTy::Map(Arc::from(k.to_codegen_ty()), Arc::from(v.to_codegen_ty()))
             }
+            Type::ArcSwap(ty) => CodegenTy::ArcSwap(Arc::from(ty.to_codegen_ty())),
             Type::Path(p) => CodegenTy::Adt(Adt {
                 segments: p.segments.clone(),
             }),

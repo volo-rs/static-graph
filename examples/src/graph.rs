@@ -1,4 +1,7 @@
-use std::time::{Duration, Instant};
+use std::{
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use gen_graph::{Runnable, E, G, O, X, Y};
 
@@ -8,9 +11,9 @@ pub mod gen_graph {
 }
 
 #[derive(Default)]
-pub struct Cache;
+pub struct Custom;
 
-impl Cache {
+impl Custom {
     pub fn new() -> Self {
         Self
     }
@@ -20,7 +23,7 @@ impl Cache {
 async fn main() {
     let start = Instant::now();
     let resp = G::new()
-        .run::<Request, EResponse, XResponse, YResponse, OResponse>(Request {
+        .run::<Request, EResponse, XResponse, YResponse, OResponse, ()>(Request {
             msg: "**Hello, world!**".to_string(),
             user_age: 18,
         })
@@ -42,10 +45,11 @@ pub struct EResponse(Duration);
 #[async_trait::async_trait]
 impl Runnable<Request, ()> for E {
     type Resp = EResponse;
+    type Error = ();
 
-    async fn run(&self, _req: Request, _prev_resp: ()) -> Self::Resp {
+    async fn run(&self, _req: Request, _prev_resp: ()) -> Result<Self::Resp, Self::Error> {
         tokio::time::sleep(Duration::from_secs(1)).await;
-        EResponse(Duration::from_secs(1))
+        Ok(EResponse(Duration::from_secs(1)))
     }
 }
 
@@ -55,10 +59,11 @@ pub struct XResponse(bool);
 #[async_trait::async_trait]
 impl Runnable<Request, EResponse> for X {
     type Resp = XResponse;
+    type Error = ();
 
-    async fn run(&self, req: Request, prev_resp: EResponse) -> Self::Resp {
+    async fn run(&self, req: Request, prev_resp: EResponse) -> Result<Self::Resp, Self::Error> {
         tokio::time::sleep(prev_resp.0).await;
-        XResponse(!req.msg.contains('*'))
+        Ok(XResponse(!req.msg.contains('*')))
     }
 }
 
@@ -68,10 +73,11 @@ pub struct YResponse(bool);
 #[async_trait::async_trait]
 impl Runnable<Request, EResponse> for Y {
     type Resp = YResponse;
+    type Error = ();
 
-    async fn run(&self, req: Request, prev_resp: EResponse) -> Self::Resp {
+    async fn run(&self, req: Request, prev_resp: EResponse) -> Result<Self::Resp, Self::Error> {
         tokio::time::sleep(prev_resp.0).await;
-        YResponse(req.user_age >= 18)
+        Ok(YResponse(req.user_age >= 18))
     }
 }
 
@@ -81,12 +87,19 @@ pub struct OResponse(String);
 #[async_trait::async_trait]
 impl Runnable<Request, (XResponse, YResponse)> for O {
     type Resp = OResponse;
+    type Error = ();
 
-    async fn run(&self, req: Request, prev_resp: (XResponse, YResponse)) -> Self::Resp {
+    async fn run(
+        &self,
+        req: Request,
+        prev_resp: (XResponse, YResponse),
+    ) -> Result<Self::Resp, Self::Error> {
+        self.o.store(Arc::new(req.msg.clone()));
+        println!("O: {:#?}", self.o.load());
         if prev_resp.0 .0 && prev_resp.1 .0 {
-            OResponse(req.msg)
+            Ok(OResponse(req.msg))
         } else {
-            OResponse("Ban".to_string())
+            Ok(OResponse("Ban".to_string()))
         }
     }
 }
