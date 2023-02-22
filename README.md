@@ -28,19 +28,21 @@ Write a graph description in a `.graph` file:
 
 ```txt
 node E -> (X, Y) {
-
+    #[default = "crate::Custom::new"]
+    custom: crate::Custom,
 }
 
 node X -> O {
-
+    x: list<string>,
 }
 
 node Y -> O {
-    
+    y: map<i32, string>,
 }
 
 node O {
-
+    #[editable = "true"]
+    o: string,
 }
 
 graph G(E)

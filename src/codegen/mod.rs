@@ -167,10 +167,7 @@ impl Codegen {
     fn write_trait(&mut self, stream: &mut TokenStream) {
         stream.extend(quote::quote! {
             #[static_graph::async_trait]
-            pub trait Runnable<Req, PrevResp>
-            where
-                Req: Clone,
-            {
+            pub trait Runnable<Req, PrevResp> {
                 type Resp;
                 type Error;
                 async fn run(&self, req: Req, prev_resp: PrevResp) -> ::std::result::Result<Self::Resp, Self::Error>;
