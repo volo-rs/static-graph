@@ -1,6 +1,6 @@
 [package]
 name = "static-graph"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Volo Team <volo@cloudwego.io>"]
 description = "Generate static parallel computation graph from DSL at compile time"
@@ -20,7 +20,7 @@ heck = "0.4"
 nom = "7"
 proc-macro2 = "1"
 quote = "1"
-syn = "1"
+syn = "2"
 tokio = { version = "1", features = ["full"] }
 
 [workspace]

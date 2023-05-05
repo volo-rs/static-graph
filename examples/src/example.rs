@@ -7,7 +7,7 @@ use gen_graph::{Runnable, E, G, O, X, Y};
 
 #[allow(warnings, clippy::all)]
 pub mod gen_graph {
-    static_graph::include_graph!("gen_graph.rs");
+    static_graph::include_graph!("example.rs");
 }
 
 #[derive(Default)]

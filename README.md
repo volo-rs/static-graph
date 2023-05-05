@@ -11,7 +11,23 @@
 [actions-badge]: https://github.com/volo-rs/static-graph/actions/workflows/ci.yaml/badge.svg
 [actions-url]: https://github.com/volo-rs/static-graph/actions
 
-This crate provides the ability to generate static graphs by analysing the node dependencies in DSL. It allows only one input and one output in a graph, and independent nodes can run in parallel.
+This crate provides the ability to generate static graphs by analysing the node dependencies in DSL. It allows only one input and one output in a graph, and independent nodes can run in maximum parallel.
+
+For example, in the following graph(the number in the brackets represents the execution time of the node), run it in serial will take 7 seconds, but run it in maximum parallel will just take 3 seconds.
+
+```mermaid
+graph TD;
+    A(0)-->B(1);
+    A(0)-->C(2);
+    A(0)-->D(1);
+    A(0)-->E(1);
+    B(1)-->F(0);
+    C(2)-->F(0);
+    D(1)-->G(1);
+    E(1)-->G(1);
+    F(0)-->H(0);
+    G(1)-->H(0);
+```
 
 ## Usage
 
@@ -19,12 +35,12 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [build-dependencies]
-static-graph = "0.1"
+static-graph = "0.2"
 ```
 
 ## Example
 
-Write a graph description in a `.graph` file:
+Write a graph description in `example.graph` file:
 
 ```txt
 node E -> (X, Y) {
@@ -52,7 +68,7 @@ Then, in `build.rs`:
 
 ```rust
 fn main() {
-    static_graph::configure().compile(".graph").unwrap();
+    static_graph::configure().compile("example.graph").unwrap();
 }
 ```
 

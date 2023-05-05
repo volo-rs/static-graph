@@ -177,7 +177,6 @@ impl Codegen {
 
     fn write_run(&mut self, graph: Arc<Graph>, stream: &mut TokenStream) {
         let name = self.upper_camel_name(&graph.name).as_syn_ident();
-        let mut visited = FxHashSet::default();
         let mut queue = VecDeque::new();
 
         assert!(self.in_degrees.get(&graph.entry_node).is_none());
@@ -190,17 +189,17 @@ impl Codegen {
         while !queue.is_empty() {
             let sz = queue.len();
             for _ in 0..sz {
+                let mut channels = TokenStream::new();
+
                 let did = queue.pop_front().unwrap();
                 let node = self.node(did).unwrap();
                 let name = self.snake_name(&node.name).as_syn_ident();
                 let upper_name = self.upper_camel_name(&node.name).as_syn_ident();
 
                 let mut upper_prev_resps = Vec::new();
-                let mut prev_resps = Vec::new();
-                let mut prev_resps_clones = Vec::new();
+                let mut resps = Vec::new();
                 if let Some(from_dids) = self.froms.get(&did) {
-                    let mut resps = Vec::with_capacity(from_dids.len());
-                    let mut handles = Vec::with_capacity(from_dids.len());
+                    let mut rxs = Vec::with_capacity(from_dids.len());
                     let mut matches = Vec::with_capacity(from_dids.len());
 
                     for from_did in from_dids {
@@ -210,29 +209,21 @@ impl Codegen {
                         let upper_f_name = self.upper_camel_name(&node.name).as_syn_ident();
                         let upper_prev_resp = format_ident!("{}Resp", upper_f_name);
 
-                        let prev_resp = format_ident!("{}_{}_resp", name, f_name);
                         let resp = format_ident!("{}_resp", f_name);
 
-                        if !visited.contains(from_did) {
-                            resps.push(resp.clone());
-                            handles.push(format_ident!("{}_handle", f_name));
-                            matches.push(quote::quote! {
-                                Ok(#resp)
-                            });
-                            visited.insert(from_did);
-                        }
+                        resps.push(resp.clone());
+                        rxs.push(format_ident!("{}_rx_{}", name, f_name));
+                        matches.push(quote::quote! {
+                            Ok(Ok(#resp))
+                        });
 
                         upper_prev_resps.push(upper_prev_resp);
-                        prev_resps.push(prev_resp.clone());
-                        prev_resps_clones.push(quote::quote! {
-                            let #prev_resp = #resp.clone();
-                        });
                     }
 
                     if !resps.is_empty() {
-                        bodys.extend(quote::quote! {
-                            let (#(#resps),*) = match static_graph::join!(#(#handles),*) {
-                                (#(#matches,)*) => (#(#resps?),*),
+                        channels.extend(quote::quote! {
+                            let (#(#resps),*) = match static_graph::join!(#(#rxs.recv()),*) {
+                                (#(#matches,)*) => (#(#resps),*),
                                 _ => panic!("Error"),
                             };
                         });
@@ -247,7 +238,7 @@ impl Codegen {
                 });
 
                 let req = format_ident!("{}_req", name);
-                let handle = format_ident!("{}_handle", name);
+                let tx = format_ident!("{}_tx", name);
                 let node: Vec<_> = self
                     .nesteds
                     .get(&did)
@@ -257,6 +248,8 @@ impl Codegen {
                     .collect();
 
                 if let Some(to_dids) = self.tos.get(&did) {
+                    let mut rxs = Vec::with_capacity(to_dids.len());
+                    let len = to_dids.len() + 1;
                     for to_did in to_dids {
                         if let Some(in_degree) = self.in_degrees.get_mut(to_did) {
                             *in_degree -= 1;
@@ -265,13 +258,19 @@ impl Codegen {
                                 queue.push_back(*to_did);
                             }
                         }
+                        let node = self.node(*to_did).unwrap();
+                        let to_name = self.snake_name(&node.name).as_syn_ident();
+                        rxs.push(format_ident!("{}_rx_{}", to_name, name));
                     }
                     bodys.extend(quote::quote! {
                         let #req = req.clone();
-                        #(#prev_resps_clones)*
                         let #name = #(#node.)*clone();
-                        let #handle = static_graph::spawn(async move {
-                            #name.run(#req, (#(#prev_resps),*)).await
+                        let (#tx, _) = static_graph::sync::broadcast::channel(#len);
+                        #(let mut #rxs = #tx.subscribe();)*
+                        static_graph::spawn(async move {
+                            #channels
+                            let resp = #name.run(#req, (#(#resps),*)).await;
+                            #tx.send(resp).ok();
                         });
                     });
                 } else {
@@ -279,8 +278,8 @@ impl Codegen {
 
                     out_resp.replace(upper_resp);
                     bodys.extend(quote::quote! {
-                        #(#prev_resps_clones)*
-                        #(#node).*.run(req, (#(#prev_resps),*)).await
+                        #channels
+                        #(#node).*.run(req, (#(#resps),*)).await
                     });
                 }
             }

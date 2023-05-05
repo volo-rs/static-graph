@@ -1,0 +1,33 @@
+node E -> (X, Y, W, Z) {
+
+}
+
+node X -> Q {
+    
+}
+
+node Y -> Q {
+
+}
+
+node W -> R {
+
+}
+
+node Z -> R {
+
+}
+
+node Q -> O {
+
+}
+
+node R -> O {
+
+}
+
+node O {
+
+}
+
+graph G(E)
