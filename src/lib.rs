@@ -53,7 +53,7 @@
 
 //! Then, in `build.rs`:
 
-//! ```rust
+//! ```rust, ignore
 //! static_graph::configure()
 //!     .file_name("example.rs")
 //!     .compile("example.graph")
@@ -62,7 +62,7 @@
 
 //! Finally, in `main.rs` write your own logic for your nodes in the graph. The generated code will be in the `OUT_DIR` directory by default, the graph name is `G`, and the nodes name are `E`, `X`, `Y`, `O`. You should implement the `Runnable` trait for each node, and then you can automatically run the graph in maximum parallel by calling `G::new().run()`.
 
-//! ```rust
+//! ```rust, ignore
 //! use std::{
 //!     sync::Arc,
 //!     time::{Duration, Instant},
