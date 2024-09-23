@@ -35,7 +35,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [build-dependencies]
-static-graph = "0.2"
+static-graph = "0.3"
 ```
 
 ## Example

@@ -1,6 +1,6 @@
 [package]
 name = "static-graph"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2021"
 authors = ["Volo Team <volo@cloudwego.io>"]
 description = "Generate static parallel computation graph from DSL at compile time"
