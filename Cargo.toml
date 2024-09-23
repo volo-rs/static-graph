@@ -12,11 +12,10 @@ repository = "https://github.com/volo-rs/static-graph"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-async-trait = "0.1"
 arc-swap = "1"
 faststr = "0.2"
 fxhash = "0.2"
-heck = "0.4"
+heck = "0.5"
 nom = "7"
 proc-macro2 = "1"
 quote = "1"

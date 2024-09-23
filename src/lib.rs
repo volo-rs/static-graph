@@ -107,8 +107,7 @@
 //! #[derive(Clone)]
 //! pub struct EResponse(Duration);
 
-//! #[async_trait::async_trait]
-//! impl Runnable<Request, ()> for E {
+//! //! impl Runnable<Request, ()> for E {
 //!     type Resp = EResponse;
 //!     type Error = ();
 
@@ -121,8 +120,7 @@
 //! #[derive(Clone)]
 //! pub struct XResponse(bool);
 
-//! #[async_trait::async_trait]
-//! impl Runnable<Request, EResponse> for X {
+//! //! impl Runnable<Request, EResponse> for X {
 //!     type Resp = XResponse;
 //!     type Error = ();
 
@@ -135,8 +133,7 @@
 //! #[derive(Clone)]
 //! pub struct YResponse(bool);
 
-//! #[async_trait::async_trait]
-//! impl Runnable<Request, EResponse> for Y {
+//! //! impl Runnable<Request, EResponse> for Y {
 //!     type Resp = YResponse;
 //!     type Error = ();
 
@@ -149,8 +146,7 @@
 //! #[derive(Clone, Debug)]
 //! pub struct OResponse(String);
 
-//! #[async_trait::async_trait]
-//! impl Runnable<Request, (XResponse, YResponse)> for O {
+//! //! impl Runnable<Request, (XResponse, YResponse)> for O {
 //!     type Resp = OResponse;
 //!     type Error = ();
 
@@ -179,7 +175,6 @@ pub mod symbol;
 pub mod tags;
 
 pub use arc_swap::*;
-pub use async_trait::*;
 pub use tokio::*;
 
 use crate::{
@@ -188,8 +183,9 @@ use crate::{
     parser::{document::Document, Parser},
     resolver::{ResolveResult, Resolver},
 };
+
 use std::{
-    io::{self, Write},
+    io::Write,
     path::{Path, PathBuf},
     process::{exit, Command},
 };
@@ -236,7 +232,7 @@ impl Builder {
         self
     }
 
-    pub fn compile(self, graph: impl AsRef<Path>) -> io::Result<()> {
+    pub fn compile(self, graph: impl AsRef<Path>) -> std::io::Result<()> {
         let out_dir = if let Some(out_dir) = self.out_dir.as_ref() {
             out_dir.clone()
         } else {

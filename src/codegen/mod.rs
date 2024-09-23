@@ -166,11 +166,10 @@ impl Codegen {
     #[inline]
     fn write_trait(&mut self, stream: &mut TokenStream) {
         stream.extend(quote::quote! {
-            #[static_graph::async_trait]
             pub trait Runnable<Req, PrevResp> {
                 type Resp;
                 type Error;
-                async fn run(&self, req: Req, prev_resp: PrevResp) -> ::std::result::Result<Self::Resp, Self::Error>;
+                fn run(&self, req: Req, prev_resp: PrevResp) -> impl std::future::Future<Output = ::std::result::Result<Self::Resp, Self::Error>> + Send;
             }
         });
     }
@@ -179,7 +178,7 @@ impl Codegen {
         let name = self.upper_camel_name(&graph.name).as_syn_ident();
         let mut queue = VecDeque::new();
 
-        assert!(self.in_degrees.get(&graph.entry_node).is_none());
+        assert!(!self.in_degrees.contains_key(&graph.entry_node));
 
         queue.push_back(graph.entry_node);
         let mut bounds = TokenStream::new();
