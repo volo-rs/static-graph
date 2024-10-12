@@ -203,6 +203,7 @@ pub fn configure() -> Builder {
         emit_rerun_if_changed: std::env::var_os("CARGO").is_some(),
         out_dir: None,
         file_name: "gen_graph.rs".into(),
+        enable_mermaid: false,
     }
 }
 
@@ -211,6 +212,7 @@ pub struct Builder {
     emit_rerun_if_changed: bool,
     out_dir: Option<PathBuf>,
     file_name: PathBuf,
+    enable_mermaid: bool, // generate mermaid file
 }
 
 impl Builder {
@@ -229,6 +231,12 @@ impl Builder {
     #[must_use]
     pub fn emit_rerun_if_changed(mut self, enable: bool) -> Self {
         self.emit_rerun_if_changed = enable;
+        self
+    }
+
+    #[must_use]
+    pub fn enable_mermaid(mut self, enable: bool) -> Self {
+        self.enable_mermaid = enable;
         self
     }
 
@@ -261,6 +269,21 @@ impl Builder {
         cx.set_tags(tags);
 
         let mut cg = Codegen::new(cx);
+
+        if self.enable_mermaid {
+            for (idx, graph) in cg.draw(&entrys).into_iter().enumerate() {
+                let mut name = self.file_name.file_stem().unwrap().to_os_string();
+                if idx != 0 {
+                    name.push(format!("_{}", idx));
+                }
+                name.push(".mermaid");
+                let out = out_dir.join(name);
+                let mut file = std::io::BufWriter::new(std::fs::File::create(&out).unwrap());
+                file.write_all(graph.as_bytes()).unwrap();
+                file.flush().unwrap();
+            }
+        }
+
         let stream = cg.write_document(entrys);
         let out = out_dir.join(self.file_name);
         let mut file = std::io::BufWriter::new(std::fs::File::create(&out).unwrap());

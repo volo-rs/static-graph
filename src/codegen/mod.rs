@@ -54,6 +54,45 @@ impl Codegen {
         stream
     }
 
+    pub fn draw(&self, def_ids: &[DefId]) -> Vec<String> {
+        let mut ret = Vec::new();
+        let mut visited = FxHashSet::default();
+        for def_id in def_ids.iter() {
+            if let Some(graph) = self.graph(*def_id) {
+                let mut bytes = String::from("graph TD\n");
+                let mut node_queue = VecDeque::new();
+                node_queue.push_back(graph.entry_node);
+                visited.insert(graph.entry_node);
+                while !node_queue.is_empty() {
+                    let node = node_queue.pop_front().unwrap();
+                    if let Some(node) = self.node(node) {
+                        if !node.to_nodes.is_empty() {
+                            for to in node.to_nodes.iter() {
+                                if !visited.contains(to) {
+                                    node_queue.push_back(*to);
+                                    visited.insert(*to);
+                                }
+                                if let Some(to) = self.node(*to) {
+                                    bytes.push_str(&node.name);
+                                    bytes.push_str(" --> ");
+                                    bytes.push_str(&to.name);
+                                    bytes.push('\n');
+                                }
+                            }
+                        } else {
+                            bytes.push_str(&node.name);
+                            bytes.push('\n');
+                        }
+                        bytes.push('\n');
+                    }
+                }
+                ret.push(bytes);
+            }
+        }
+
+        ret
+    }
+
     pub fn write_graph(&mut self, def_id: DefId, stream: &mut TokenStream) {
         let graph = self.graph(def_id).unwrap();
         let graph_name = self.upper_camel_name(&graph.name).as_syn_ident();
