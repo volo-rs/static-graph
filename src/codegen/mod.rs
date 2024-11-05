@@ -54,12 +54,23 @@ impl Codegen {
         stream
     }
 
-    pub fn draw(&self, def_ids: &[DefId]) -> Vec<String> {
-        let mut ret = Vec::new();
-        let mut visited = FxHashSet::default();
+    /// draw a mermaid graph , go [mermaid.js.org](https://mermaid.js.org) for more detail
+    /// ```mermaid
+    ///graph TD;
+    ///  subgraph G
+    ///    E --> X;
+    ///    E --> Y;
+    ///    X --> O;
+    ///    Y --> O;
+    ///    O
+    ///  end
+    /// ```
+    pub fn mermaid(&self, def_ids: &[DefId]) -> String {
+        let mut ret = String::from("graph TD;\n");
         for def_id in def_ids.iter() {
             if let Some(graph) = self.graph(*def_id) {
-                let mut bytes = String::from("graph TD\n");
+                let mut visited = FxHashSet::default();
+                let mut bytes = format!("subgraph {}\n", graph.name);
                 let mut node_queue = VecDeque::new();
                 node_queue.push_back(graph.entry_node);
                 visited.insert(graph.entry_node);
@@ -73,20 +84,23 @@ impl Codegen {
                                     visited.insert(*to);
                                 }
                                 if let Some(to) = self.node(*to) {
+                                    bytes.push_str("  ");
                                     bytes.push_str(&node.name);
-                                    bytes.push_str(" --> ");
+                                    bytes.push_str("-->");
                                     bytes.push_str(&to.name);
-                                    bytes.push('\n');
+                                    bytes.push_str(";\n");
                                 }
                             }
                         } else {
+                            bytes.push_str("  ");
                             bytes.push_str(&node.name);
                             bytes.push('\n');
                         }
-                        bytes.push('\n');
                     }
                 }
-                ret.push(bytes);
+
+                bytes.push_str("end\n\n");
+                ret.push_str(&bytes);
             }
         }
 

@@ -16,4 +16,13 @@ node O {
     o: string,
 }
 
+node A -> B{
+
+}
+
+node B {
+
+}
+
 graph G(E)
+graph H(A)
