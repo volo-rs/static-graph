@@ -54,6 +54,59 @@ impl Codegen {
         stream
     }
 
+    /// draw a mermaid graph , go [mermaid.js.org](https://mermaid.js.org) for more detail
+    /// ```mermaid
+    ///graph TD;
+    ///  subgraph G
+    ///    E --> X;
+    ///    E --> Y;
+    ///    X --> O;
+    ///    Y --> O;
+    ///    O
+    ///  end
+    /// ```
+    pub fn mermaid(&self, def_ids: &[DefId]) -> String {
+        let mut ret = String::from("graph TD;\n");
+        for def_id in def_ids.iter() {
+            if let Some(graph) = self.graph(*def_id) {
+                let mut visited = FxHashSet::default();
+                let mut bytes = format!("subgraph {}\n", graph.name);
+                let mut node_queue = VecDeque::new();
+                node_queue.push_back(graph.entry_node);
+                visited.insert(graph.entry_node);
+                while !node_queue.is_empty() {
+                    let node = node_queue.pop_front().unwrap();
+                    if let Some(node) = self.node(node) {
+                        if !node.to_nodes.is_empty() {
+                            for to in node.to_nodes.iter() {
+                                if !visited.contains(to) {
+                                    node_queue.push_back(*to);
+                                    visited.insert(*to);
+                                }
+                                if let Some(to) = self.node(*to) {
+                                    bytes.push_str("  ");
+                                    bytes.push_str(&node.name);
+                                    bytes.push_str("-->");
+                                    bytes.push_str(&to.name);
+                                    bytes.push_str(";\n");
+                                }
+                            }
+                        } else {
+                            bytes.push_str("  ");
+                            bytes.push_str(&node.name);
+                            bytes.push('\n');
+                        }
+                    }
+                }
+
+                bytes.push_str("end\n\n");
+                ret.push_str(&bytes);
+            }
+        }
+
+        ret
+    }
+
     pub fn write_graph(&mut self, def_id: DefId, stream: &mut TokenStream) {
         let graph = self.graph(def_id).unwrap();
         let graph_name = self.upper_camel_name(&graph.name).as_syn_ident();
@@ -166,11 +219,10 @@ impl Codegen {
     #[inline]
     fn write_trait(&mut self, stream: &mut TokenStream) {
         stream.extend(quote::quote! {
-            #[static_graph::async_trait]
             pub trait Runnable<Req, PrevResp> {
                 type Resp;
                 type Error;
-                async fn run(&self, req: Req, prev_resp: PrevResp) -> ::std::result::Result<Self::Resp, Self::Error>;
+                fn run(&self, req: Req, prev_resp: PrevResp) -> impl std::future::Future<Output = ::std::result::Result<Self::Resp, Self::Error>> + Send;
             }
         });
     }
@@ -179,7 +231,7 @@ impl Codegen {
         let name = self.upper_camel_name(&graph.name).as_syn_ident();
         let mut queue = VecDeque::new();
 
-        assert!(self.in_degrees.get(&graph.entry_node).is_none());
+        assert!(!self.in_degrees.contains_key(&graph.entry_node));
 
         queue.push_back(graph.entry_node);
         let mut bounds = TokenStream::new();

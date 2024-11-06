@@ -107,8 +107,7 @@
 //! #[derive(Clone)]
 //! pub struct EResponse(Duration);
 
-//! #[async_trait::async_trait]
-//! impl Runnable<Request, ()> for E {
+//! //! impl Runnable<Request, ()> for E {
 //!     type Resp = EResponse;
 //!     type Error = ();
 
@@ -121,8 +120,7 @@
 //! #[derive(Clone)]
 //! pub struct XResponse(bool);
 
-//! #[async_trait::async_trait]
-//! impl Runnable<Request, EResponse> for X {
+//! //! impl Runnable<Request, EResponse> for X {
 //!     type Resp = XResponse;
 //!     type Error = ();
 
@@ -135,8 +133,7 @@
 //! #[derive(Clone)]
 //! pub struct YResponse(bool);
 
-//! #[async_trait::async_trait]
-//! impl Runnable<Request, EResponse> for Y {
+//! //! impl Runnable<Request, EResponse> for Y {
 //!     type Resp = YResponse;
 //!     type Error = ();
 
@@ -149,8 +146,7 @@
 //! #[derive(Clone, Debug)]
 //! pub struct OResponse(String);
 
-//! #[async_trait::async_trait]
-//! impl Runnable<Request, (XResponse, YResponse)> for O {
+//! //! impl Runnable<Request, (XResponse, YResponse)> for O {
 //!     type Resp = OResponse;
 //!     type Error = ();
 
@@ -179,7 +175,6 @@ pub mod symbol;
 pub mod tags;
 
 pub use arc_swap::*;
-pub use async_trait::*;
 pub use tokio::*;
 
 use crate::{
@@ -188,8 +183,9 @@ use crate::{
     parser::{document::Document, Parser},
     resolver::{ResolveResult, Resolver},
 };
+
 use std::{
-    io::{self, Write},
+    io::Write,
     path::{Path, PathBuf},
     process::{exit, Command},
 };
@@ -207,6 +203,7 @@ pub fn configure() -> Builder {
         emit_rerun_if_changed: std::env::var_os("CARGO").is_some(),
         out_dir: None,
         file_name: "gen_graph.rs".into(),
+        enable_mermaid: false,
     }
 }
 
@@ -215,6 +212,7 @@ pub struct Builder {
     emit_rerun_if_changed: bool,
     out_dir: Option<PathBuf>,
     file_name: PathBuf,
+    enable_mermaid: bool, // generate mermaid file
 }
 
 impl Builder {
@@ -236,7 +234,13 @@ impl Builder {
         self
     }
 
-    pub fn compile(self, graph: impl AsRef<Path>) -> io::Result<()> {
+    #[must_use]
+    pub fn enable_mermaid(mut self, enable: bool) -> Self {
+        self.enable_mermaid = enable;
+        self
+    }
+
+    pub fn compile(self, graph: impl AsRef<Path>) -> std::io::Result<()> {
         let out_dir = if let Some(out_dir) = self.out_dir.as_ref() {
             out_dir.clone()
         } else {
@@ -265,6 +269,16 @@ impl Builder {
         cx.set_tags(tags);
 
         let mut cg = Codegen::new(cx);
+
+        if self.enable_mermaid {
+            let ret = cg.mermaid(&entrys);
+            let mut name = self.file_name.file_stem().unwrap().to_os_string();
+            name.push(".mermaid");
+            let out = out_dir.join(name);
+            let mut file = std::io::BufWriter::new(std::fs::File::create(&out).unwrap());
+            file.write_all(ret.trim().as_bytes()).unwrap();
+            file.flush().unwrap();
+        }
         let stream = cg.write_document(entrys);
         let out = out_dir.join(self.file_name);
         let mut file = std::io::BufWriter::new(std::fs::File::create(&out).unwrap());

@@ -35,7 +35,6 @@ pub struct Request;
 #[derive(Clone)]
 pub struct EResponse;
 
-#[async_trait::async_trait]
 impl Runnable<Request, ()> for E {
     type Resp = EResponse;
     type Error = ();
@@ -48,7 +47,6 @@ impl Runnable<Request, ()> for E {
 #[derive(Clone)]
 pub struct XResponse;
 
-#[async_trait::async_trait]
 impl Runnable<Request, EResponse> for X {
     type Resp = XResponse;
     type Error = ();
@@ -62,7 +60,6 @@ impl Runnable<Request, EResponse> for X {
 #[derive(Clone)]
 pub struct YResponse;
 
-#[async_trait::async_trait]
 impl Runnable<Request, EResponse> for Y {
     type Resp = YResponse;
     type Error = ();
@@ -76,7 +73,6 @@ impl Runnable<Request, EResponse> for Y {
 #[derive(Clone)]
 pub struct WResponse;
 
-#[async_trait::async_trait]
 impl Runnable<Request, EResponse> for W {
     type Resp = WResponse;
     type Error = ();
@@ -89,7 +85,6 @@ impl Runnable<Request, EResponse> for W {
 #[derive(Clone)]
 pub struct ZResponse;
 
-#[async_trait::async_trait]
 impl Runnable<Request, EResponse> for Z {
     type Resp = ZResponse;
     type Error = ();
@@ -102,7 +97,6 @@ impl Runnable<Request, EResponse> for Z {
 #[derive(Clone)]
 pub struct QResponse;
 
-#[async_trait::async_trait]
 impl Runnable<Request, (XResponse, YResponse)> for Q {
     type Resp = QResponse;
     type Error = ();
@@ -119,7 +113,6 @@ impl Runnable<Request, (XResponse, YResponse)> for Q {
 #[derive(Clone)]
 pub struct RResponse;
 
-#[async_trait::async_trait]
 impl Runnable<Request, (WResponse, ZResponse)> for R {
     type Resp = RResponse;
     type Error = ();
@@ -137,7 +130,6 @@ impl Runnable<Request, (WResponse, ZResponse)> for R {
 #[derive(Clone, Debug)]
 pub struct OResponse;
 
-#[async_trait::async_trait]
 impl Runnable<Request, (QResponse, RResponse)> for O {
     type Resp = OResponse;
     type Error = ();

@@ -35,7 +35,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [build-dependencies]
-static-graph = "0.2"
+static-graph = "0.3"
 ```
 
 ## Example
@@ -74,6 +74,7 @@ fn main() {
         .unwrap();
 }
 ```
+> if you want to generate a mermaid file, just set `enable_mermaid(true)` 
 
 Finally, in `main.rs` write your own logic for your nodes in the graph. The generated code will be in the `OUT_DIR` directory by default, the graph name is `G`, and the nodes name are `E`, `X`, `Y`, `O`. You should implement the `Runnable` trait for each node, and then you can automatically run the graph in maximum parallel by calling `G::new().run()`.
 
@@ -122,7 +123,6 @@ pub struct Request {
 #[derive(Clone)]
 pub struct EResponse(Duration);
 
-#[async_trait::async_trait]
 impl Runnable<Request, ()> for E {
     type Resp = EResponse;
     type Error = ();
@@ -136,7 +136,6 @@ impl Runnable<Request, ()> for E {
 #[derive(Clone)]
 pub struct XResponse(bool);
 
-#[async_trait::async_trait]
 impl Runnable<Request, EResponse> for X {
     type Resp = XResponse;
     type Error = ();
@@ -150,7 +149,6 @@ impl Runnable<Request, EResponse> for X {
 #[derive(Clone)]
 pub struct YResponse(bool);
 
-#[async_trait::async_trait]
 impl Runnable<Request, EResponse> for Y {
     type Resp = YResponse;
     type Error = ();
@@ -164,7 +162,6 @@ impl Runnable<Request, EResponse> for Y {
 #[derive(Clone, Debug)]
 pub struct OResponse(String);
 
-#[async_trait::async_trait]
 impl Runnable<Request, (XResponse, YResponse)> for O {
     type Resp = OResponse;
     type Error = ();
